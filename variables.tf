@@ -16,43 +16,46 @@ EOT
     server_name         = string
     start_ip_address    = string
   }))
-  # --- Unconfirmed validation candidates, derived from azurerm_mysql_flexible_server_firewall_rule's provider source ---
-  # Not auto-enabled: either a bespoke provider validator we can't safely translate,
-  # or a path that crosses a list-typed block (needs its own for_each wrapping).
-  # Review, translate into a real validation{} block above, and delete once confirmed.
-  # path: resource_group_name
-  #   condition: length(value) <= 90
-  #   message:   [from resourcegroups.ValidateName: invalid when len(value) > 90]
-  #   source:    [from resourcegroups.ValidateName: invalid when len(value) > 90]
-  # path: resource_group_name
-  #   condition: !endswith(value, ".")
-  #   message:   [from resourcegroups.ValidateName: must not end with "."]
-  #   source:    [from resourcegroups.ValidateName: must not end with "."]
-  # path: resource_group_name
-  #   condition: length(value) != 0
-  #   message:   [from resourcegroups.ValidateName: invalid when len(value) == 0]
-  #   source:    [from resourcegroups.ValidateName: invalid when len(value) == 0]
-  # path: resource_group_name
-  #   source:    [from resourcegroups.ValidateName] !matched
-  # path: server_name
-  #   source:    [from validate.FlexibleServerName] !ok
-  # path: server_name
-  #   condition: length(value) >= 3
-  #   message:   [from validate.FlexibleServerName: invalid when len(value) < 3]
-  #   source:    [from validate.FlexibleServerName: invalid when len(value) < 3]
-  # path: server_name
-  #   condition: length(value) <= 63
-  #   message:   [from validate.FlexibleServerName: invalid when len(value) > 63]
-  #   source:    [from validate.FlexibleServerName: invalid when len(value) > 63]
-  # path: server_name
-  #   source:    [from validate.FlexibleServerName] !regexp.MustCompile(`^[a-z0-9]([a-z0-9-]+[a-z0-9])?$`).MatchString(v)
-  # path: start_ip_address
-  #   source:    [from azValidate.IPv4Address] !ok
-  # path: start_ip_address
-  #   source:    [from azValidate.IPv4Address] four == nil
-  # path: end_ip_address
-  #   source:    [from azValidate.IPv4Address] !ok
-  # path: end_ip_address
-  #   source:    [from azValidate.IPv4Address] four == nil
+  validation {
+    condition = alltrue([
+      for k, v in var.mysql_flexible_server_firewall_rules : (
+        length(v.resource_group_name) <= 90
+      )
+    ])
+    error_message = "[from resourcegroups.ValidateName: invalid when len(value) > 90]"
+  }
+  validation {
+    condition = alltrue([
+      for k, v in var.mysql_flexible_server_firewall_rules : (
+        !endswith(v.resource_group_name, ".")
+      )
+    ])
+    error_message = "[from resourcegroups.ValidateName: must not end with \".\"]"
+  }
+  validation {
+    condition = alltrue([
+      for k, v in var.mysql_flexible_server_firewall_rules : (
+        length(v.resource_group_name) != 0
+      )
+    ])
+    error_message = "[from resourcegroups.ValidateName: invalid when len(value) == 0]"
+  }
+  validation {
+    condition = alltrue([
+      for k, v in var.mysql_flexible_server_firewall_rules : (
+        length(v.server_name) >= 3
+      )
+    ])
+    error_message = "[from validate.FlexibleServerName: invalid when len(value) < 3]"
+  }
+  validation {
+    condition = alltrue([
+      for k, v in var.mysql_flexible_server_firewall_rules : (
+        length(v.server_name) <= 63
+      )
+    ])
+    error_message = "[from validate.FlexibleServerName: invalid when len(value) > 63]"
+  }
+  # Note: 7 additional provider-side validators are enforced at apply time but not mirrored as validation{} blocks here (bespoke or non-mechanically-translatable).
 }
 
